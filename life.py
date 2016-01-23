@@ -6,15 +6,27 @@ import sys
 
 
 class Life:
-    def __init__(self):
+    def __init__(self, filename):
         self.rows = 24
         self.cols = 80
+        self.board = []
 
-        # create board
-        self.board = [[Cell(True
-                            if i%5 != 0 else False  # make things interesting initially
-        ) for i in range(self.cols)] for j in range(self.rows)]
-        
+        with open(filename, 'r') as infile:
+            for line in infile:
+                # read lines from file, padding string to center to match desired cols
+                # what happens if infile's line length is greater than cols?
+                self.board.append([Cell(True) if char == "O" else Cell(False) for char in '{:.^{width}}'.format(line, width=self.cols)])
+
+        # center rows
+        rows_added = 0
+        while len(self.board) < self.rows:
+            if rows_added % 2 == 0:
+                self.board.append([Cell() for i in range(80)])
+            else:
+                self.board.insert(0, [Cell() for i in range(80)])
+            rows_added += 1
+
+
     def tick(self):
         for row in range(len(self.board)):
             for col in range(self.cols):
@@ -30,18 +42,20 @@ class Life:
                     for col2 in col_interval:
                         if row2 == row and col2 == col:
                             continue
-                        if self.board[row2][col2].query():
+                        if self.board[row2][col2].query() is True:
                             alive_neighbors += 1
-
+                            
                 # decide all fates before applying any
                 if current_cell.query() is True:
                     if alive_neighbors < 2 or alive_neighbors > 3:
                         current_cell.set_fate("die")
                     elif alive_neighbors == 2 or alive_neighbors == 3:
                         current_cell.set_fate("live")
+                        
                 else:
                     if alive_neighbors == 3:
                         current_cell.set_fate("live")
+
 
         # apply fates
         for row in range(len(self.board)):
@@ -65,7 +79,7 @@ class Cell:
     def apply_fate(self):
         if self.fate == "die":
             self.alive = False
-        else:
+        elif self.fate == "live":
             self.alive = True
 
     def query(self):
@@ -76,7 +90,7 @@ class Cell:
 
         
 if __name__ == "__main__":
-    Life = Life()
+    Life = Life("gun.txt")
     while True:
         Life.print_board()
         Life.tick()
